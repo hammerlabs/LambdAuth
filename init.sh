@@ -20,6 +20,9 @@ REGION=$(jq -r '.REGION' config.json)
 BUCKET=$(jq -r '.BUCKET' config.json)
 MAX_AGE=$(jq -r '.MAX_AGE' config.json)
 DDB_TABLE=$(jq -r '.DDB_TABLE' config.json)
+TEACHER_TABLE=$(jq -r '.TEACHER_TABLE' config.json)
+CREW_TABLE=$(jq -r '.CREW_TABLE' config.json)
+STUDENT_TABLE=$(jq -r '.STUDENT_TABLE' config.json)
 IDENTITY_POOL_NAME=$(jq -r '.IDENTITY_POOL_NAME' config.json)
 DEVELOPER_PROVIDER_NAME=$(jq -r '.DEVELOPER_PROVIDER_NAME' config.json)
 
@@ -32,8 +35,29 @@ aws dynamodb create-table --table-name $DDB_TABLE \
     --attribute-definitions AttributeName=email,AttributeType=S \
     --key-schema AttributeName=email,KeyType=HASH \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-		--region $REGION
+    --region $REGION
 echo "Creating DynamoDB Table $DDB_TABLE end (creation still in progress)"
+echo "Creating DynamoDB Table $TEACHER_TABLE begin..."
+aws dynamodb create-table --table-name $TEACHER_TABLE \
+    --attribute-definitions AttributeName=email,AttributeType=S \
+    --key-schema AttributeName=email,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --region $REGION
+echo "Creating DynamoDB Table $TEACHER_TABLE end (creation still in progress)"
+echo "Creating DynamoDB Table $CREW_TABLE begin..."
+aws dynamodb create-table --table-name $CREW_TABLE \
+    --attribute-definitions AttributeName=email,AttributeType=S \
+    --key-schema AttributeName=email,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --region $REGION
+echo "Creating DynamoDB Table $CREW_TABLE end (creation still in progress)"
+echo "Creating DynamoDB Table $STUDENT_TABLE begin..."
+aws dynamodb create-table --table-name $STUDENT_TABLE \
+    --attribute-definitions AttributeName=email,AttributeType=S \
+    --key-schema AttributeName=email,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --region $REGION
+echo "Creating DynamoDB Table $STUDENT_TABLE end (creation still in progress)"
 
 # Create Cognito Identity Pool
 IDENTITY_POOL_ID=$(aws cognito-identity list-identity-pools --max-results 1 \
@@ -65,12 +89,7 @@ fi
 # Create IAM Roles for Cognito
 for f in $(ls -1 trust*); do
   echo "Editing trust from $f begin..."
-  sed -e "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" \
-      -e "s/<DYNAMODB_TABLE>/$DDB_TABLE/g" \
-      -e "s/<DYNAMODB_EMAIL_INDEX>/$DDB_EMAIL_INDEX/g" \
-      -e "s/<REGION>/$REGION/g" \
-      -e "s/<IDENTITY_POOL_ID>/$IDENTITY_POOL_ID/g" \
-      -e "s/<REGION>/$REGION/g" \
+  sed -e "s/<IDENTITY_POOL_ID>/$IDENTITY_POOL_ID/g" \
       $f > edit/$f
   echo "Editing trust from $f end"
 done
@@ -78,10 +97,6 @@ for f in $(ls -1 Cognito*); do
   role="${f%.*}"
   echo "Creating role $role from $f begin..."
   sed -e "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" \
-      -e "s/<DYNAMODB_TABLE>/$DDB_TABLE/g" \
-      -e "s/<DYNAMODB_EMAIL_INDEX>/$DDB_EMAIL_INDEX/g" \
-      -e "s/<REGION>/$REGION/g" \
-      -e "s/<IDENTITY_POOL_ID>/$IDENTITY_POOL_ID/g" \
       -e "s/<REGION>/$REGION/g" \
 	      $f > edit/$f
   if [[ $f == *Unauth_* ]]; then
@@ -111,7 +126,9 @@ for f in $(ls -1 LambdAuth*); do
   echo "Creating role $role from $f begin..."
   sed -e "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" \
       -e "s/<DYNAMODB_TABLE>/$DDB_TABLE/g" \
-      -e "s/<DYNAMODB_EMAIL_INDEX>/$DDB_EMAIL_INDEX/g" \
+      -e "s/<TEACHER_TABLE>/$TEACHER_TABLE/g" \
+      -e "s/<CREW_TABLE>/$CREW_TABLE/g" \
+      -e "s/<STUDENT_TABLE>/$STUDENT_TABLE/g" \
       -e "s/<IDENTITY_POOL_ID>/$IDENTITY_POOL_ID/g" \
       -e "s/<REGION>/$REGION/g" \
       $f > edit/$f
