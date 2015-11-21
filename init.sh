@@ -21,9 +21,6 @@ REGION=$(jq -r '.REGION' config.json)
 BUCKET=$(jq -r '.BUCKET' config.json)
 MAX_AGE=$(jq -r '.MAX_AGE' config.json)
 DDB_TABLE=$(jq -r '.DDB_TABLE' config.json)
-TEACHER_TABLE=$(jq -r '.TEACHER_TABLE' config.json)
-CREW_TABLE=$(jq -r '.CREW_TABLE' config.json)
-STUDENT_TABLE=$(jq -r '.STUDENT_TABLE' config.json)
 IDENTITY_POOL_NAME=$(jq -r '.IDENTITY_POOL_NAME' config.json)
 DEVELOPER_PROVIDER_NAME=$(jq -r '.DEVELOPER_PROVIDER_NAME' config.json)
 
@@ -44,27 +41,6 @@ aws dynamodb create-table --table-name $DDB_TABLE \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
     --region $REGION
 echo "Creating DynamoDB Table $DDB_TABLE end (creation still in progress)"
-echo "Creating DynamoDB Table $TEACHER_TABLE begin..."
-aws dynamodb create-table --table-name $TEACHER_TABLE \
-    --attribute-definitions AttributeName=email,AttributeType=S \
-    --key-schema AttributeName=email,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-    --region $REGION
-echo "Creating DynamoDB Table $TEACHER_TABLE end (creation still in progress)"
-echo "Creating DynamoDB Table $CREW_TABLE begin..."
-aws dynamodb create-table --table-name $CREW_TABLE \
-    --attribute-definitions AttributeName=email,AttributeType=S \
-    --key-schema AttributeName=email,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-    --region $REGION
-echo "Creating DynamoDB Table $CREW_TABLE end (creation still in progress)"
-echo "Creating DynamoDB Table $STUDENT_TABLE begin..."
-aws dynamodb create-table --table-name $STUDENT_TABLE \
-    --attribute-definitions AttributeName=email,AttributeType=S \
-    --key-schema AttributeName=email,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-    --region $REGION
-echo "Creating DynamoDB Table $STUDENT_TABLE end (creation still in progress)"
 
 # Create Cognito Identity Pool
 IDENTITY_POOL_ID=$(aws cognito-identity list-identity-pools --max-results 1 \

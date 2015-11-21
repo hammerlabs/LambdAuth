@@ -16,52 +16,52 @@ fi
 
 # Get config parmaters
 echo "Loading config parameters"
+# Read other configuration from config.json
+AWS_ACCOUNT_ID=$(jq -r '.AWS_ACCOUNT_ID' config.json)
+CLI_PROFILE=$(jq -r '.CLI_PROFILE' config.json)
 REGION=$(jq -r '.REGION' config.json)
+BUCKET=$(jq -r '.BUCKET' config.json)
+MAX_AGE=$(jq -r '.MAX_AGE' config.json)
+DDB_TABLE=$(jq -r '.DDB_TABLE' config.json)
+TEACHER_TABLE=$(jq -r '.TEACHER_TABLE' config.json)
+CREW_TABLE=$(jq -r '.CREW_TABLE' config.json)
+STUDENT_TABLE=$(jq -r '.STUDENT_TABLE' config.json)
+IDENTITY_POOL_NAME=$(jq -r '.IDENTITY_POOL_NAME' config.json)
+IDENTITY_POOL_ID=$(jq -r '.IDENTITY_POOL_ID' config.json)
+DEVELOPER_PROVIDER_NAME=$(jq -r '.DEVELOPER_PROVIDER_NAME' config.json)
+
 if [  -z "$REGION"  ]; then
 	echo "config.json: REGION value is required, but missing!"
 	exit 1
 fi
-
-BUCKET=$(jq -r '.BUCKET' config.json)
 if [  -z "$BUCKET"  ]; then
 	echo "config.json: BUCKET value is required, but missing!"
 	exit 1
 fi
 
+#if a CLI Profile name is provided... use it.
+if [[ ! -z "$CLI_PROFILE" ]]; then
+  echo "setting session CLI profile to $CLI_PROFILE"
+  export AWS_DEFAULT_PROFILE=$CLI_PROFILE
+fi
+
 # Remove IAM Roles Created for Lambda functions and Cognito
-echo "Removing IAM Roles"
-aws iam delete-role-policy --role-name LambdAuthChangePassword --policy-name LambdAuthChangePassword
-aws iam delete-role --role-name LambdAuthChangePassword
-
-aws iam delete-role-policy --role-name LambdAuthCreateUser --policy-name LambdAuthCreateUser
-aws iam delete-role --role-name LambdAuthCreateUser
-
-aws iam delete-role-policy --role-name LambdAuthLogin --policy-name LambdAuthLogin
-aws iam delete-role --role-name LambdAuthLogin
-
-aws iam delete-role-policy --role-name LambdAuthLostPassword --policy-name LambdAuthLostPassword
-aws iam delete-role --role-name LambdAuthLostPassword
-
-aws iam delete-role-policy --role-name LambdAuthResetPassword --policy-name LambdAuthResetPassword
-aws iam delete-role --role-name LambdAuthResetPassword
-
-aws iam delete-role-policy --role-name LambdAuthVerifyUser --policy-name LambdAuthVerifyUser
-aws iam delete-role --role-name LambdAuthVerifyUser
-
-aws iam delete-role-policy --role-name Cognito_LambdAuthAuth_Role --policy-name Cognito_LambdAuthAuth_Role
-aws iam delete-role --role-name Cognito_LambdAuthAuth_Role
-
-aws iam delete-role-policy --role-name Cognito_LambdAuthUnauth_Role --policy-name Cognito_LambdAuthUnauth_Role
-aws iam delete-role --role-name Cognito_LambdAuthUnauth_Role
-
+for f in $(ls -1|grep ^LambdAuth); do
+  echo "Deleting IAM Role and Policy for: $f"
+  aws iam delete-role-policy --role-name "$f" --policy-name $f
+  aws iam delete-role --role-name "$f"
+done
 
 # Remove Cognito Identity Pool
 echo "Removing Cognito Identity Pool"
-aws cognito-identity delete-identity-pool --identity-pool-id `aws cognito-identity list-identity-pools --max-results 2 --region $REGION | jq -r '.IdentityPools[] | select(.IdentityPoolName == "LambdAuth") .IdentityPoolId'` --region $REGION
+aws cognito-identity delete-identity-pool --identity-pool-id $IDENTITY_POOL_ID --region $REGION
+mv config.json config.json.orig
+jq '.IDENTITY_POOL_ID=""' config.json.orig > config.json
+rm config.json.orig
 
 # Remove dynamodb Table
 echo "Removing DynamoDB table"
-aws dynamodb delete-table --table-name LambdAuthUsers --region $REGION
+aws dynamodb delete-table --table-name "$DDB_TABLE" --region $REGION
 
 # Remove the S3 Bucket
 echo "Removing S3 Bucket"
@@ -70,12 +70,10 @@ aws s3 rb s3://$BUCKET --force
 
 # Remove Lambda functions
 echo "Removing Lambda functions..."
-aws lambda delete-function --function-name LambdAuthChangePassword --region $REGION
-aws lambda delete-function --function-name LambdAuthCreateUser --region $REGION
-aws lambda delete-function --function-name LambdAuthLogin --region $REGION
-aws lambda delete-function --function-name LambdAuthLostPassword --region $REGION
-aws lambda delete-function --function-name LambdAuthResetPassword --region $REGION
-aws lambda delete-function --function-name LambdAuthVerifyUser --region $REGION
+for f in $(ls -1|grep ^LambdAuth); do
+  echo "Deleting Lambda function: $f"
+  aws lambda delete-function --function-name "$f" --region $REGION
+done
 
 # Remove CloudWatch Logs and Streams
 for f in $(aws logs describe-log-groups --region $REGION | jq -r '.logGroups[] | select(.logGroupName | contains("LambdAuth")) .logGroupName'); do

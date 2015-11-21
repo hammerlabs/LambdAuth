@@ -1,18 +1,12 @@
 <html>
 <head>
-  <title>Sample Sign Up Page</title>
+  <title>Sign Up</title>
 	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.28.min.js"></script>
-	<script>
-  AWS.config.region = '<REGION>';
-	AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: '<IDENTITY_POOL_ID>'
-  });
-  var lambda = new AWS.Lambda();
-	</script>
-  <h1>Sample Sign Up Page</h1>
+  <script src="aws-config.js"></script>
+  <h1>Sign Up</h1>
   <div id="info">
   Sign Up
   </div>
@@ -67,7 +61,9 @@
         else {
           var output = JSON.parse(data.Payload);
           if (output.created) {
-            info.innerHTML = 'User ' + input.email + ' created. Please check your email to validate the user and enable login.';
+            info.innerHTML = 'Teacher with an email address of ' + input.email + ' created. Soon you will receive an email to validate the user and enable login. Until then, please <a href="' + output.verificationLink + '">click here to verify your email address</a> or copy & paste the following link in a browser:'
+          + '<br><br>'
+          + '<a href="' + output.verificationLink + '">' + output.verificationLink + '</a>';
           } else {
             info.innerHTML = 'User <b>not</b> created.';
           }

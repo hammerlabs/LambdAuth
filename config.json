@@ -1,5 +1,6 @@
 {
   "AWS_ACCOUNT_ID": "123412341234",
+  "CLI_PROFILE": "default",
   "REGION": "eu-west-1",
   "BUCKET": "bucket",
   "MAX_AGE": "10",
@@ -9,5 +10,5 @@
   "EXTERNAL_NAME": "My Authentication",
   "EMAIL_SOURCE": "email@example.com",
   "VERIFICATION_PAGE": "http://bucket.s3.amazonaws.com/verify.html",
-  "RESET_PAGE": "http://bucket.s3.amazonaws.com/reset.html"
+  "RESET_PAGE": "http://bucket.s3.amazonaws.com/reset.html",
 }

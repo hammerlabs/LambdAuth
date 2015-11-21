@@ -112,12 +112,19 @@ exports.handler = function(event, context) {
 						context.fail('Error in storeUser: ' + err);
 					}
 				} else {
+					var verificationLink = config.VERIFICATION_PAGE + '?email=' + encodeURIComponent(email) + '&verify=' + token;
 					sendVerificationEmail(email, token, function(err, data) {
 						if (err) {
-							context.fail('Error in sendVerificationEmail: ' + err);
+							//context.fail('Error in sendVerificationEmail: ' + err);
+							context.succeed({
+								created: true,
+								error: 'Error in sendVerificationEmail: ' + err,
+								verificationLink: verificationLink
+							});
 						} else {
 							context.succeed({
-								created: true
+								created: true,
+								verificationLink: verificationLink
 							});
 						}
 					});
